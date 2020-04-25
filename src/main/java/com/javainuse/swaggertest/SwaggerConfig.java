@@ -4,17 +4,15 @@ import com.google.common.base.Predicate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RequestMethod;
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.ParameterBuilder;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.builders.ResponseMessageBuilder;
+import springfox.documentation.builders.*;
 import springfox.documentation.schema.ModelRef;
-import springfox.documentation.service.AllowableListValues;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Parameter;
-import springfox.documentation.service.ResponseMessage;
+import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger.web.ApiKeyVehicle;
+import springfox.documentation.swagger.web.SecurityConfiguration;
+import springfox.documentation.swagger.web.SecurityConfigurationBuilder;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.ArrayList;
@@ -39,17 +37,79 @@ public class SwaggerConfig {
 
 		Docket docket = new Docket(DocumentationType.SWAGGER_2).groupName("@public-api").select()
 				.apis(RequestHandlerSelectors.basePackage("com.javainuse.swaggertest.external"))
+				.paths(PathSelectors.ant("/**"))
 				.build().globalOperationParameters(params)
 				.apiInfo(apiInfo()).select().build()
 				;
+
 		docket.globalResponseMessage(RequestMethod.POST, getDefaultResponses())
 				.globalResponseMessage(RequestMethod.PUT, getDefaultResponses())
 				.globalResponseMessage(RequestMethod.GET, getDefaultResponses())
-				.globalResponseMessage(RequestMethod.DELETE, getDefaultResponses());
+				.globalResponseMessage(RequestMethod.DELETE, getDefaultResponses())
+				.securityContexts(Arrays.asList(actuatorSecurityContext()))
+				.securitySchemes(Arrays.asList(basicAuthScheme()));
+
+
 
 
 		return docket;
 	}
+
+	private SecurityContext actuatorSecurityContext() {
+		return SecurityContext.builder()
+				.securityReferences(Arrays.asList(basicAuthReference()))
+				.forPaths(PathSelectors.ant("/**"))
+				.build();
+	}
+
+	private SecurityScheme basicAuthScheme() {
+		return new BasicAuth("basicAuth");
+	}
+
+	private SecurityReference basicAuthReference() {
+		return new SecurityReference("basicAuth", new AuthorizationScope[0]);
+	}
+
+
+//
+//	@Bean
+//	SecurityConfiguration security() {
+//		return SecurityConfigurationBuilder.builder().useBasicAuthenticationWithAccessCodeGrant(true).build();
+//	}
+//
+//	private ApiKey apiKey() {
+//		return new ApiKey("Authorization", "Authorization", "header");
+//	}
+//
+////	private SecurityContext securityContext() {
+////		return SecurityContext.builder().securityReferences(defaultAuth()).forPaths(PathSelectors.regex("/*"))
+////				.build();
+////	}
+//
+////	List<SecurityReference> defaultAuth() {
+////		AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
+////		AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
+////		authorizationScopes[0] = authorizationScope;
+////		return Arrays.asList(new SecurityReference("Authorization", authorizationScopes));
+////	}
+////
+//	private SecurityContext securityContext() {
+//		return SecurityContext.builder()
+//				.securityReferences(Arrays.asList(basicAuthReference()))
+//				.forPaths(PathSelectors.ant("/api/v1/**"))
+//				.build();
+//	}
+//
+//	private SecurityScheme basicAuthScheme() {
+//		return new BasicAuth("basicAuth");
+//	}
+//
+//	private SecurityReference basicAuthReference() {
+//		return new SecurityReference("basicAuth", new AuthorizationScope[0]);
+//	}
+
+
+
 
 
 	@Bean
